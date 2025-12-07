@@ -34,6 +34,23 @@ namespace Barkod
             // İleride burayı şöyle dolduracağız:
             // if (btn.Name == "btnMalzemeTanimla") { new UrunForm().ShowDialog(); }
             if(btn.Name == "btnHazirUrun") { btnHazirUrun_Click(sender, e); }
+            if(btn.Name == "btnMalzemeTanimla") // Eğer malzeme butonuna basıldıysa
+    {
+                UrunForm frm = new UrunForm();
+                frm.ShowDialog();
+            }
+            
+            if (btn.Name == "btnKisiTanimla")
+            {
+                KisiForm frm = new KisiForm();
+                frm.ShowDialog();
+            }
+
+            if (btn.Name == "btnKategoriTanimla")
+            {
+                KategoriForm frm = new KategoriForm();
+                frm.ShowDialog();
+            }
 
             // if (btn.Name == "btnKisiTanimla") { new KisiForm().ShowDialog(); }
         }
