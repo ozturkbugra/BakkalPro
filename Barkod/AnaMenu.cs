@@ -42,9 +42,8 @@ namespace Barkod
             }
             else if (btn.Name == "btnStokGiris")
             {
-                MessageBox.Show("Stok Giriş Modülü Hazırlanıyor...", "Bilgi");
-                // StokGirisForm frm = new StokGirisForm();
-                // frm.ShowDialog();
+                StokGirisForm frm = new StokGirisForm();
+                frm.ShowDialog();
             }
             else if (btn.Name == "btnBorcTakip")
             {

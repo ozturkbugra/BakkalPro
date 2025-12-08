@@ -84,6 +84,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StokGirisForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="StokGirisForm.Designer.cs">
+      <DependentUpon>StokGirisForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="UrunForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -117,6 +123,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="StokGirisForm.resx">
+      <DependentUpon>StokGirisForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UrunForm.resx">
       <DependentUpon>UrunForm.cs</DependentUpon>
     </EmbeddedResource>
