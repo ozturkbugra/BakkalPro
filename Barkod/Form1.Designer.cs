@@ -14,7 +14,6 @@
 
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this.splitContainerAna = new System.Windows.Forms.SplitContainer();
             this.gridSepet = new System.Windows.Forms.DataGridView();
             this.panelUstBarkod = new System.Windows.Forms.Panel();
@@ -100,20 +99,10 @@
             // 
             this.gridSepet.AllowUserToAddRows = false;
             this.gridSepet.BackgroundColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 11F);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.gridSepet.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.gridSepet.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.gridSepet.DefaultCellStyle = dataGridViewCellStyle1;
             this.gridSepet.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gridSepet.Location = new System.Drawing.Point(0, 100);
             this.gridSepet.Name = "gridSepet";
-            this.gridSepet.RowTemplate.Height = 35;
             this.gridSepet.Size = new System.Drawing.Size(750, 480);
             this.gridSepet.TabIndex = 2;
             // 
@@ -141,7 +130,6 @@
             // 
             // cmbKisiler
             // 
-            this.cmbKisiler.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbKisiler.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.cmbKisiler.FormattingEnabled = true;
             this.cmbKisiler.Location = new System.Drawing.Point(120, 12);
