@@ -8,7 +8,9 @@ namespace Barkod
 {
     public partial class StokGirisForm : Form
     {
+        // İstersen burayı Veritabani.BaglantiGetir() olarak değiştirebilirsin önceki gibi
         SqlConnection baglanti = new SqlConnection(@"Data Source=.;Initial Catalog=BakkalDB;Integrated Security=True");
+
         DataTable dtSepet = new DataTable();
         decimal genelToplam = 0;
         bool hesaplaniyor = false;
@@ -22,7 +24,8 @@ namespace Barkod
         {
             GridTasarim();
             TedarikcileriYukle();
-            cmbOdemeTipi.SelectedIndex = 2; // Varsayılan Veresiye olsun (Mal alımı genelde böyledir)
+            // Eğer formda cmbOdemeTipi yoksa hata vermemesi için try-catch ekleyebilirsin veya formdan eklemelisin
+            if (cmbOdemeTipi.Items.Count > 0) cmbOdemeTipi.SelectedIndex = 2;
             txtBarkod.Focus();
         }
 
@@ -181,37 +184,41 @@ namespace Barkod
             MessageBox.Show("Lütfen geçerli bir sayı giriniz.");
         }
 
-        // --- KAYIT İŞLEMİ (FATURA NO ve ÖDEME TİPİ DAHİL) ---
+        // --- KAYIT İŞLEMİ (ONAY EKLENDİ) ---
         private void btnKaydet_Click(object sender, EventArgs e)
         {
-            if (dtSepet.Rows.Count == 0) return;
-            if (cmbTedarikci.SelectedValue == null) { MessageBox.Show("Tedarikçi Seçin!"); return; }
-            if (string.IsNullOrEmpty(txtFaturaNo.Text)) { MessageBox.Show("Fatura No Giriniz!"); return; }
+            // 1. Önce Kontroller
+            if (dtSepet.Rows.Count == 0) { MessageBox.Show("Sepet boş, ürün ekleyiniz."); return; }
+            if (cmbTedarikci.SelectedValue == null) { MessageBox.Show("Lütfen bir tedarikçi seçiniz!"); return; }
+            if (string.IsNullOrEmpty(txtFaturaNo.Text)) { MessageBox.Show("Lütfen Fatura Numarasını Giriniz!"); return; }
 
+            // 2. ONAY MEKANİZMASI (YENİ EKLENEN KISIM)
+            DialogResult cevap = MessageBox.Show(
+                $"Toplam Tutar: {genelToplam:C2}\n\nStok giriş işlemini onaylıyor musunuz?",
+                "Kayıt Onayı",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (cevap != DialogResult.Yes) return; // "Hayır" derse metoddan çık, işlem yapma.
+
+            // 3. Veritabanı İşlemleri
             int tedarikciId = Convert.ToInt32(cmbTedarikci.SelectedValue);
             string odemeTipi = cmbOdemeTipi.SelectedItem.ToString();
-
-            // Fatura Numarasını (String de olabilir ama veritabanında INT tanımladık, o yüzden dönüştürüyoruz)
-            // Eğer harfli fatura no olacaksa veritabanında FaturaNo tipini NVARCHAR yapmak gerekir.
-            // Şimdilik sadece rakam varsayıyoruz.
-            int faturaNo = 0;
-            int.TryParse(txtFaturaNo.Text, out faturaNo);
 
             if (baglanti.State == ConnectionState.Closed) baglanti.Open();
             SqlTransaction islem = baglanti.BeginTransaction();
 
             try
             {
-                // ÖDEME TİPİNE GÖRE SÜTUNLARI DOLDUR
                 decimal tutarNakit = 0, tutarKart = 0, tutarVeresiye = 0;
 
                 if (odemeTipi.Contains("Nakit")) tutarNakit = genelToplam;
                 else if (odemeTipi.Contains("Kredi")) tutarKart = genelToplam;
-                else tutarVeresiye = genelToplam; // Veresiye
+                else tutarVeresiye = genelToplam;
 
-                // 1. FATURA (ALIŞ FATURASI)
+                // FATURA KAYDI
                 string sqlFatura = @"INSERT INTO Faturalar 
-                                     (KisiId, Tarih, GenelToplam, Aciklama, FaturaNo, TutarNakit, TutarKrediKarti, TutarVeresiye, OdemeTipi) 
+                                     (KisiId, Tarih, GenelToplam, Aciklama, BelgeNo, TutarNakit, TutarKrediKarti, TutarVeresiye, OdemeTipi) 
                                      VALUES (@kisi, @tarih, @toplam, 'Stok Girişi', @fno, @nakit, @kart, @veresiye, @tip); 
                                      SELECT SCOPE_IDENTITY();";
 
@@ -219,7 +226,7 @@ namespace Barkod
                 cmdFatura.Parameters.AddWithValue("@kisi", tedarikciId);
                 cmdFatura.Parameters.AddWithValue("@tarih", dtTarih.Value);
                 cmdFatura.Parameters.AddWithValue("@toplam", genelToplam);
-                cmdFatura.Parameters.AddWithValue("@fno", faturaNo);
+                cmdFatura.Parameters.AddWithValue("@fno", txtFaturaNo.Text);
                 cmdFatura.Parameters.AddWithValue("@nakit", tutarNakit);
                 cmdFatura.Parameters.AddWithValue("@kart", tutarKart);
                 cmdFatura.Parameters.AddWithValue("@veresiye", tutarVeresiye);
@@ -227,7 +234,7 @@ namespace Barkod
 
                 int faturaId = Convert.ToInt32(cmdFatura.ExecuteScalar());
 
-                // 2. DETAYLAR VE HAREKETLER
+                // DETAYLAR VE HAREKETLER
                 foreach (DataRow row in dtSepet.Rows)
                 {
                     if (row.RowState == DataRowState.Deleted) continue;
@@ -250,7 +257,7 @@ namespace Barkod
                     cmdSatir.Parameters.AddWithValue("@tut", tutar);
                     cmdSatir.ExecuteNonQuery();
 
-                    // HAREKET TABLOSU (GİRİŞ)
+                    // Stok Hareket (Giriş olduğu için +)
                     string sqlHareket = @"INSERT INTO Hareketler 
                                           (urun_id, kisi_id, girismiktari, cikismiktari, birimfiyat, toplamtutar, kalanmiktar, tarih)
                                           VALUES 
@@ -267,19 +274,16 @@ namespace Barkod
                     cmdHareket.Parameters.AddWithValue("@tarih", dtTarih.Value);
                     cmdHareket.ExecuteNonQuery();
 
-                    // Fiyat Güncelle
+                    // Alış Fiyatını Güncelle
                     SqlCommand cmdFiyat = new SqlCommand("UPDATE Urunler SET AlisFiyati = @alis WHERE Id = @uid", baglanti, islem);
                     cmdFiyat.Parameters.AddWithValue("@alis", alisFiyati);
                     cmdFiyat.Parameters.AddWithValue("@uid", urunId);
                     cmdFiyat.ExecuteNonQuery();
                 }
 
-                // 3. TEDARİKÇİ BAKİYESİ (VERESİYE İSE BORCUMUZU DÜŞ/ARTIR)
-                // Tedarikçiye borçlandığımız için bakiyeyi EKSİ olarak artırıyoruz (veya nasıl takip ediyorsan)
-                // Genelde: Müşteri Borcu (+), Tedarikçi Alacağı (-)
+                // Tedarikçi Bakiyesi
                 if (tutarVeresiye > 0)
                 {
-                    // Burada "- @tutar" diyerek kişinin bakiyesini düşürüyoruz (Borçlu oluyoruz)
                     SqlCommand cmdBakiye = new SqlCommand("UPDATE Kisiler SET Bakiye = Bakiye - @tutar WHERE Id=@kisi", baglanti, islem);
                     cmdBakiye.Parameters.AddWithValue("@tutar", tutarVeresiye);
                     cmdBakiye.Parameters.AddWithValue("@kisi", tedarikciId);
@@ -287,7 +291,9 @@ namespace Barkod
                 }
 
                 islem.Commit();
-                MessageBox.Show("Stok Girişi Başarıyla Kaydedildi.");
+                MessageBox.Show("Stok Girişi Başarıyla Kaydedildi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                // Formu Temizle
                 dtSepet.Rows.Clear();
                 lblToplam.Text = "0.00 ₺";
                 txtFaturaNo.Clear();
